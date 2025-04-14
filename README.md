@@ -36,9 +36,48 @@ Application web permettant aux médecins agréés de créer des certificats méd
    ```
 
 3. Configuration de la base de données :
-   - Créez une base de données MySQL
+   - Créez les bases de données MySQL avec le script suivant :
+     ```sql
+     -- Création des bases de données
+     CREATE DATABASE medical_certificate_system_dev CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+     CREATE DATABASE medical_certificate_system_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+     CREATE DATABASE medical_certificate_system_prod CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+     -- Attribution des privilèges (ajustez selon votre configuration)
+     GRANT ALL PRIVILEGES ON medical_certificate_system_dev.* TO 'votre_utilisateur'@'localhost';
+     GRANT ALL PRIVILEGES ON medical_certificate_system_test.* TO 'votre_utilisateur'@'localhost';
+     GRANT ALL PRIVILEGES ON medical_certificate_system_prod.* TO 'votre_utilisateur'@'localhost';
+
+     FLUSH PRIVILEGES;
+     ```
    - Copiez `backend/config/config.example.json` vers `backend/config/config.json`
-   - Modifiez les paramètres dans `config.json` selon votre configuration
+   - Modifiez les paramètres dans `config.json` selon votre configuration :
+     ```json
+     {
+         "development": {
+             "username": "votre_utilisateur",
+             "password": "votre_mot_de_passe",
+             "database": "medical_certificate_system_dev",
+             "host": "127.0.0.1",
+             "dialect": "mysql"
+         },
+         "test": {
+             "username": "votre_utilisateur",
+             "password": "votre_mot_de_passe",
+             "database": "medical_certificate_system_test",
+             "host": "127.0.0.1",
+             "dialect": "mysql"
+         },
+         "production": {
+             "username": "votre_utilisateur",
+             "password": "votre_mot_de_passe",
+             "database": "medical_certificate_system_prod",
+             "host": "127.0.0.1",
+             "dialect": "mysql",
+             "logging": false
+         }
+     }
+     ```
 
 4. Variables d'environnement :
    - Copiez `backend/.env.example` vers `backend/.env`

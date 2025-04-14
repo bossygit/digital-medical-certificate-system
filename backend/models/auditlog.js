@@ -16,7 +16,8 @@ module.exports = (sequelize) => {
       AuditLog.belongsTo(models.User, {
         foreignKey: 'user_id',
         targetKey: 'user_id',
-        as: 'user' // Alias
+        as: 'user', // Alias
+        onDelete: 'CASCADE'
       });
     }
   }
@@ -51,7 +52,7 @@ module.exports = (sequelize) => {
       validate: { isIP: true } // Optional: validate IP format
     },
     details: {
-      type: DataTypes.JSONB,
+      type: DataTypes.JSON,
       allowNull: true
     },
     timestamp: {

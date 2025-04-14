@@ -17,7 +17,7 @@ module.exports = {
           key: 'user_id'
         },
         onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
+        onDelete: 'CASCADE'
       },
       action: {
         type: Sequelize.STRING,
@@ -36,7 +36,7 @@ module.exports = {
         allowNull: true
       },
       details: {
-        type: Sequelize.JSONB,
+        type: Sequelize.JSON,
         allowNull: true
       },
       timestamp: {
