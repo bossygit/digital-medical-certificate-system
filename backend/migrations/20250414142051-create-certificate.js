@@ -87,7 +87,8 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.removeConstraint('Certificates', 'certificates_status_check');
+    // Commentez ou supprimez la ligne suivante car la contrainte n'existe peut-être pas
+    // await queryInterface.removeConstraint('Certificates', 'certificates_status_check');
     await queryInterface.dropTable('Certificates');
   }
 };

@@ -66,7 +66,7 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.removeConstraint('Users', 'users_role_check');
+    // await queryInterface.removeConstraint('Users', 'users_role_check');
     await queryInterface.dropTable('Users');
   }
 };

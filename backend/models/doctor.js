@@ -31,7 +31,8 @@ module.exports = (sequelize) => {
     doctor_id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
-      allowNull: false
+      allowNull: false,
+      autoIncrement: true
     },
     agrement_number: {
       type: DataTypes.STRING,

@@ -2,6 +2,7 @@ const db = require('../models');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto'); // For generating temp password
 const auditService = require('../services/audit.service'); // Import audit service
+const { generateTemporaryPassword } = require('../utils/passwordUtils'); // À créer
 
 // === Doctor Management ===
 
@@ -23,7 +24,7 @@ exports.listDoctors = async (req, res) => {
                 {
                     model: db.Doctor,
                     as: 'doctorProfile',
-                    attributes: ['agrement_number', 'specialty'] // Select doctor fields
+                    attributes: ['doctor_id', 'specialty', 'agrement_number'] // Champs du docteur
                 }
             ]
         });
@@ -53,126 +54,98 @@ exports.listDoctors = async (req, res) => {
 
 // Add a new doctor
 exports.addDoctor = async (req, res) => {
-    const adminUserId = req.user.id; // Get admin ID from auth middleware
+    const adminUserId = req.user.id;
     const {
         email,
         first_name,
         last_name,
-        agrement_number,
-        phone_number,
         specialty,
-        office_address
+        license_number,
+        phone_number,
+        office_address,
+        agrement_number
     } = req.body;
 
-    // 1. Validate required fields
-    if (!email || !first_name || !last_name || !agrement_number) {
-        return res.status(400).json({ message: 'Missing required fields: email, first_name, last_name, agrement_number.' });
-    }
-
-    const t = await db.sequelize.transaction(); // Start transaction
+    const transaction = await db.sequelize.transaction();
 
     try {
-        // 2. Check for uniqueness
-        const existingUser = await db.User.findOne({ where: { email }, transaction: t });
+        // 1. Vérifier si l'email existe déjà
+        const existingUser = await db.User.findOne({ where: { email }, transaction });
         if (existingUser) {
-            await t.rollback();
-            return res.status(409).json({ message: 'Email already exists.' });
-        }
-        const existingDoctor = await db.Doctor.findOne({ where: { agrement_number }, transaction: t });
-        if (existingDoctor) {
-            await t.rollback();
-            return res.status(409).json({ message: 'Agreement number already exists.' });
+            await transaction.rollback();
+            return res.status(400).json({ message: 'Email already exists' });
         }
 
-        // 3. Generate temporary password
-        const tempPassword = crypto.randomBytes(8).toString('hex'); // Generate a 16-char hex password
-        console.log(`Generated temp password for ${email}: ${tempPassword}`); // Log for admin/testing ONLY - REMOVE FOR PROD
-
-        // 4. Hash the temporary password (for both user table and doctor table temp field)
+        // 2. Générer un mot de passe temporaire
+        const tempPassword = generateTemporaryPassword();
         const saltRounds = 10;
-        const hashedTempPassword = await bcrypt.hash(tempPassword, saltRounds);
+        const hashedPassword = await bcrypt.hash(tempPassword, saltRounds);
 
-        // 5. Set temp password expiry (e.g., 48 hours from now)
-        const expiryDate = new Date();
-        expiryDate.setHours(expiryDate.getHours() + 48);
-
-        // 6. Create User record within the transaction
+        // 3. Créer l'utilisateur
         const newUser = await db.User.create({
             email,
-            password_hash: hashedTempPassword, // Use hashed temp password initially
+            password_hash: hashedPassword,
             role: 'doctor',
             first_name,
             last_name,
-            phone_number: phone_number || null,
-            is_active: true // Activate account immediately
-        }, { transaction: t });
+            phone_number,
+            is_active: true
+        }, { transaction });
 
-        // 7. Create Doctor record within the transaction
-        await db.Doctor.create({
-            doctor_id: newUser.user_id, // Link to the created User
-            agrement_number,
-            specialty: specialty || null,
-            office_address: office_address || null,
-            temp_password: hashedTempPassword, // Store the hashed temp password here too
-            temp_password_expiry: expiryDate
-        }, { transaction: t });
+        // 4. Créer l'enregistrement Docteur
+        const newDoctor = await db.Doctor.create({
+            user_id: newUser.user_id,
+            specialty,
+            agrement_number: agrement_number,
+            office_address
+        }, { transaction });
 
-        // 8. Commit the transaction
-        await t.commit();
+        // 5. Valider la transaction
+        await transaction.commit();
 
-        // ---> Log successful doctor addition <---
-        await auditService.logAction({
-            userId: adminUserId, // The admin performing the action
-            action: 'admin_add_doctor',
-            ipAddress: req.ip,
-            targetType: 'user',
-            targetId: newUser.user_id, // ID of the newly created doctor user
-            details: { doctorEmail: newUser.email, agrement: agrement_number }
-        });
+        console.log(`Doctor added: ${email} / Temp Password: ${tempPassword}`);
+        // TODO: Envoyer email
 
-        // 9. TODO: Send welcome email/SMS with the PLAIN TEXT tempPassword
-        // This step requires integration with an external service (e.g., Nodemailer, Twilio)
-        // SendEmail(email, "Welcome - Your Temporary Password", `Your temporary password is: ${tempPassword}`);
-
-        // 10. Return success response (excluding password info)
+        // 6. Renvoyer une réponse de succès
         res.status(201).json({
-            message: 'Doctor added successfully. Temporary password generated.',
-            userId: newUser.user_id,
-            email: newUser.email
-            // DO NOT return the temporary password here
+            message: 'Doctor added successfully.',
+            doctor: {
+                userId: newUser.user_id,
+                doctorId: newDoctor.doctor_id,
+                email: newUser.email,
+                firstName: newUser.first_name,
+                lastName: newUser.last_name,
+                specialty: newDoctor.specialty,
+                licenseNumber: newDoctor.license_number,
+                office_address: newDoctor.office_address,
+                agrementNumber: newDoctor.agrement_number
+            }
         });
 
     } catch (error) {
-        await t.rollback(); // Rollback transaction on any error
-        // ---> Log failed doctor addition attempt (Optional) <---
-        // await auditService.logAction({
-        //     userId: adminUserId,
-        //     action: 'admin_add_doctor_failed',
-        //     ipAddress: req.ip,
-        //     details: { reason: error.message, attemptedEmail: email, attemptedAgrement: agrement_number }
-        // });
+        await transaction.rollback();
         console.error('Error adding doctor:', error);
         if (error.name === 'SequelizeValidationError') {
-            return res.status(400).json({ message: 'Validation error', errors: error.errors.map(e => e.message) });
+            return res.status(400).json({ message: 'Validation failed', errors: error.errors.map(e => e.message) });
         }
-        res.status(500).json({ message: 'An error occurred while adding the doctor.' });
+        res.status(500).json({ message: 'Server error while adding doctor' });
     }
 };
 
 // Get details of a specific doctor
 exports.getDoctorDetails = async (req, res) => {
     const adminUserId = req.user.id;
-    const doctorUserId = parseInt(req.params.id); // Already validated as int > 0
+    const doctorUserId = parseInt(req.params.id);
 
     try {
         const doctorUser = await db.User.findOne({
-            where: { user_id: doctorUserId, role: 'doctor' }, // Ensure it's a doctor
+            where: { user_id: doctorUserId, role: 'doctor' },
             attributes: ['user_id', 'email', 'first_name', 'last_name', 'phone_number', 'is_active', 'createdAt', 'updatedAt'],
             include: [
                 {
                     model: db.Doctor,
                     as: 'doctorProfile',
-                    attributes: { exclude: ['temp_password', 'temp_password_expiry'] } // Exclude sensitive temp info
+                    attributes: { exclude: ['user_id', 'createdAt', 'updatedAt'] }
                 }
             ]
         });
@@ -181,7 +154,6 @@ exports.getDoctorDetails = async (req, res) => {
             return res.status(404).json({ message: 'Doctor not found.' });
         }
 
-        // Log action
         await auditService.logAction({
             userId: adminUserId,
             action: 'admin_get_doctor_details',
@@ -189,7 +161,6 @@ exports.getDoctorDetails = async (req, res) => {
             targetType: 'user',
             targetId: doctorUserId
         });
-
         res.status(200).json(doctorUser);
 
     } catch (error) {
@@ -200,11 +171,10 @@ exports.getDoctorDetails = async (req, res) => {
 
 // Update doctor information (by Admin)
 exports.updateDoctor = async (req, res) => {
-    const adminUserId = req.user.id; // Admin performing the action
-    const doctorUserId = parseInt(req.params.id); // Already validated
+    const adminUserId = req.user.id;
+    const doctorUserId = parseInt(req.params.id);
     const { first_name, last_name, phone_number, specialty, office_address } = req.body;
 
-    // Create objects with only the fields allowed and provided for update
     const userDataToUpdate = {};
     if (req.body.hasOwnProperty('first_name')) userDataToUpdate.first_name = first_name;
     if (req.body.hasOwnProperty('last_name')) userDataToUpdate.last_name = last_name;
@@ -219,19 +189,21 @@ exports.updateDoctor = async (req, res) => {
     }
 
     const t = await db.sequelize.transaction();
-
     try {
-        // Ensure the target user exists and is a doctor before updating
         const doctorUser = await db.User.findOne({
             where: { user_id: doctorUserId, role: 'doctor' },
+            include: [{ model: db.Doctor, as: 'doctorProfile' }],
             transaction: t
         });
-        if (!doctorUser) {
+
+        if (!doctorUser || !doctorUser.doctorProfile) {
             await t.rollback();
-            return res.status(404).json({ message: 'Doctor not found.' });
+            return res.status(404).json({ message: 'Doctor or doctor profile not found.' });
         }
 
-        // Update User table if needed
+        const doctorRecordId = doctorUser.doctorProfile.doctor_id;
+
+        // Update User table
         if (Object.keys(userDataToUpdate).length > 0) {
             await db.User.update(userDataToUpdate, {
                 where: { user_id: doctorUserId },
@@ -239,17 +211,16 @@ exports.updateDoctor = async (req, res) => {
             });
         }
 
-        // Update Doctor table if needed
+        // Update Doctor table
         if (Object.keys(doctorDataToUpdate).length > 0) {
             await db.Doctor.update(doctorDataToUpdate, {
-                where: { doctor_id: doctorUserId },
+                where: { doctor_id: doctorRecordId },
                 transaction: t
             });
         }
 
         await t.commit();
 
-        // Log the action
         const updatedFields = { ...userDataToUpdate, ...doctorDataToUpdate };
         await auditService.logAction({
             userId: adminUserId,
@@ -260,14 +231,13 @@ exports.updateDoctor = async (req, res) => {
             details: { updatedFields }
         });
 
-        // Fetch the updated profile to return it (optional)
         const updatedProfile = await db.User.findOne({
             where: { user_id: doctorUserId },
             attributes: ['user_id', 'email', 'first_name', 'last_name', 'phone_number', 'is_active'],
             include: [{
                 model: db.Doctor,
                 as: 'doctorProfile',
-                attributes: ['agrement_number', 'specialty', 'office_address']
+                attributes: ['doctor_id', 'specialty', 'license_number', 'office_address']
             }]
         });
 
@@ -279,18 +249,20 @@ exports.updateDoctor = async (req, res) => {
     } catch (error) {
         await t.rollback();
         console.error('Error updating doctor profile by admin:', error);
-        res.status(500).json({ message: 'An error occurred while updating the doctor profile.' });
+        if (error.name === 'SequelizeValidationError') {
+            return res.status(400).json({ message: 'Validation failed', errors: error.errors.map(e => e.message) });
+        }
+        res.status(500).json({ message: 'An error occurred while updating doctor profile.' });
     }
 };
 
 // Activate/Suspend a doctor account
 exports.updateDoctorStatus = async (req, res) => {
     const adminUserId = req.user.id;
-    const doctorUserId = parseInt(req.params.id); // Already validated
-    const { isActive } = req.body; // Already validated as boolean
+    const doctorUserId = parseInt(req.params.id);
+    const { isActive } = req.body;
 
     try {
-        // Find the user first to ensure they exist and are a doctor
         const userToUpdate = await db.User.findOne({
             where: { user_id: doctorUserId, role: 'doctor' }
         });
@@ -299,13 +271,15 @@ exports.updateDoctorStatus = async (req, res) => {
             return res.status(404).json({ message: 'Doctor not found.' });
         }
 
-        // Update the is_active status
-        await db.User.update(
+        const [affectedRows] = await db.User.update(
             { is_active: isActive },
             { where: { user_id: doctorUserId } }
         );
 
-        // Log the action
+        if (affectedRows === 0) {
+            console.warn(`Update status for doctor ${doctorUserId} resulted in 0 affected rows.`);
+        }
+
         await auditService.logAction({
             userId: adminUserId,
             action: isActive ? 'admin_activate_doctor' : 'admin_suspend_doctor',
@@ -324,6 +298,67 @@ exports.updateDoctorStatus = async (req, res) => {
     } catch (error) {
         console.error('Error updating doctor status:', error);
         res.status(500).json({ message: 'An error occurred while updating doctor status.' });
+    }
+};
+
+// Delete a doctor account
+exports.deleteDoctor = async (req, res) => {
+    const adminUserId = req.user.id;
+    const doctorUserId = parseInt(req.params.id);
+
+    const transaction = await db.sequelize.transaction();
+    try {
+        const userToDelete = await db.User.findOne({
+            where: { user_id: doctorUserId, role: 'doctor' },
+            include: [{ model: db.Doctor, as: 'doctorProfile' }],
+            transaction
+        });
+
+        if (!userToDelete) {
+            await transaction.rollback();
+            return res.status(404).json({ message: 'Docteur non trouvé.' });
+        }
+
+        const doctorRecordId = userToDelete.doctorProfile?.doctor_id;
+
+        if (doctorRecordId) {
+            await db.Doctor.destroy({
+                where: { doctor_id: doctorRecordId },
+                transaction
+            });
+        } else {
+            console.warn(`User with ID ${doctorUserId} has role 'doctor' but no associated doctor profile found during deletion.`);
+        }
+
+        const deletedUserRows = await db.User.destroy({
+            where: { user_id: doctorUserId },
+            transaction
+        });
+
+        if (deletedUserRows === 0) {
+            throw new Error(`Failed to delete user record for user ID ${doctorUserId}.`);
+        }
+
+        await transaction.commit();
+
+        await auditService.logAction({
+            userId: adminUserId,
+            action: 'admin_delete_doctor',
+            ipAddress: req.ip,
+            targetType: 'user',
+            targetId: doctorUserId,
+            details: { deletedEmail: userToDelete.email }
+        });
+
+        res.status(200).json({ message: `Doctor account (ID: ${doctorUserId}) deleted successfully.` });
+
+    } catch (error) {
+        await transaction.rollback();
+        console.error(`Error deleting doctor (ID: ${doctorUserId}):`, error);
+        if (error.name === 'SequelizeForeignKeyConstraintError') {
+            return res.status(400).json({ message: 'Cannot delete doctor. They have existing associated records (e.g., certificates).' });
+        }
+        res.status(500).json({ message: 'An error occurred while deleting the doctor.' });
     }
 };
 
@@ -386,4 +421,8 @@ exports.sendExpiryNotifications = async (req, res) => {
     // 3. Integrate with an email/SMS service to send notifications
     // Log action
     res.status(501).json({ message: 'Send expiry notifications not implemented yet.' });
-}; 
+};
+
+// Ajoutez d'autres fonctions admin ici (getDoctors, updateDoctor, deleteDoctor, etc.)
+exports.getDoctors = async (req, res) => { /* ... logique ... */ res.status(501).json({ message: "Not implemented" }); };
+exports.deleteDoctor = async (req, res) => { /* ... logique ... */ res.status(501).json({ message: "Not implemented" }); }; 
