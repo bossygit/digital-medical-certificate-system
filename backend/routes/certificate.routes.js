@@ -42,6 +42,13 @@ router.get('/:id',
     certificateController.getCertificateDetails
 );
 
+// GET /api/certificates - Lister les certificats du docteur connecté (à implémenter)
+router.get('/',
+    authMiddleware.authenticateToken,
+    roleMiddleware.isDoctor,
+    certificateController.listDoctorCertificates
+);
+
 // Note: Certificate history for doctors is likely in doctor.routes.js
 // Note: Verification via QR code is in verification.routes.js
 

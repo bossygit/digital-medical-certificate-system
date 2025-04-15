@@ -14,7 +14,7 @@ module.exports = (sequelize) => {
     static associate(models) {
       // A Doctor profile belongs to a User
       Doctor.belongsTo(models.User, {
-        foreignKey: 'doctor_id',
+        foreignKey: 'user_id',
         targetKey: 'user_id',
         as: 'user'
       });

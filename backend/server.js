@@ -6,6 +6,7 @@ const cors = require('cors');
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes'); // Importez les routes admin
+const certificateRoutes = require('./routes/certificate.routes'); // <<< Importez
 
 // Load environment variables
 dotenv.config();
@@ -39,6 +40,7 @@ app.use(express.urlencoded({ extended: true }));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes); // Enregistrez les routes admin sous /api/admin
+app.use('/api/certificates', certificateRoutes); // <<< Enregistrez
 
 // Basic route
 app.get('/', (req, res) => {
