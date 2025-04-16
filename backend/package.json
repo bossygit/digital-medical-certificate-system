@@ -23,10 +23,6 @@
   "author": "Votre Nom ou Organisation",
   "license": "ISC",
   "type": "commonjs",
-  "engines": {
-    "node": "20.x",
-    "npm": ">=8.0.0"
-  },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
