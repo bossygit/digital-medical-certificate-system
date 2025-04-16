@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const { sequelize } = require('./models');
 const cors = require('cors');
+const path = require('path');
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
@@ -46,6 +47,17 @@ app.use('/api/certificates', certificateRoutes); // <<< Enregistrez
 app.get('/', (req, res) => {
     res.json({ message: 'Digital Medical Certificate System API' });
 });
+
+// Si en production, servir les fichiers statiques du build React
+if (process.env.NODE_ENV === 'production') {
+    // Pour servir les fichiers statiques du dossier frontend/build
+    app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+    // Pour toutes les routes non-API, renvoyer l'index.html de React
+    app.get('*', (req, res) => {
+        res.sendFile(path.resolve(__dirname, '../frontend/build', 'index.html'));
+    });
+}
 
 // Start the server
 app.listen(PORT, async () => {
