@@ -16,7 +16,7 @@ module.exports = {
         "dialect": "mysql"
     },
     "production": {
-        "use_env_variable": "DATABASE_URL", // Pour Render
+        "use_env_variable": "postgresql://med_cert:WiVq75wkprdD1AfVxHwqRXdzMYIMEXqd@dpg-cvvrtci4d50c739mc4sg-a/medical_certificate_system", // Pour Render
         "dialect": "postgres", // PostgreSQL pour la production
         "dialectOptions": {
             "ssl": {

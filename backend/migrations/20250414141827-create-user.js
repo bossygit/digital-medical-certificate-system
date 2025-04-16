@@ -20,10 +20,7 @@ module.exports = {
       },
       role: {
         type: Sequelize.STRING,
-        allowNull: false,
-        validate: {
-          isIn: [['doctor', 'dgtt_admin', 'dgtt_staff']]
-        }
+        allowNull: false
       },
       first_name: {
         type: Sequelize.STRING,
