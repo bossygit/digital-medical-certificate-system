@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto'); // For generating temp password
 const auditService = require('../services/audit.service'); // Import audit service
 const { generateTemporaryPassword } = require('../utils/passwordUtils'); // À créer
-const { Certificate, Doctor, User } = require('../models'); // Assurez-vous d'importer les modèles nécessaires
+const { Certificate, Doctor, User, sequelize } = require('../models'); // Assurez-vous d'importer les modèles nécessaires
 
 // === Doctor Management ===
 
@@ -490,6 +490,77 @@ exports.listAllCertificates = async (req, res) => {
         res.status(500).json({ message: 'An error occurred while listing certificates.' });
     }
 };
+
+// === Statistics ===
+
+exports.getGlobalStats = async (req, res) => {
+    const adminUserId = req.user.id;
+
+    try {
+        // --- Récupérer les statistiques ---
+
+        // 1. Certificats
+        const totalCertificates = await Certificate.count();
+        const certificatesByStatusRaw = await Certificate.findAll({
+            attributes: ['status', [sequelize.fn('COUNT', sequelize.col('status')), 'count']],
+            group: ['status']
+        });
+        const certificatesByStatus = certificatesByStatusRaw.reduce((acc, item) => {
+            acc[item.get('status')] = parseInt(item.get('count'), 10);
+            return acc;
+        }, { issued: 0, verified: 0, expired: 0, revoked: 0 }); // Initialiser tous les statuts
+
+        // 2. Utilisateurs
+        const totalUsers = await User.count();
+        const usersByRoleRaw = await User.findAll({
+            attributes: ['role', [sequelize.fn('COUNT', sequelize.col('role')), 'count']],
+            group: ['role']
+        });
+        const usersByRole = usersByRoleRaw.reduce((acc, item) => {
+            acc[item.get('role')] = parseInt(item.get('count'), 10);
+            return acc;
+        }, { doctor: 0, dgtt_admin: 0, dgtt_staff: 0 }); // Initialiser tous les rôles
+
+        // 3. Médecins Actifs/Inactifs
+        const activeDoctors = await User.count({ where: { role: 'doctor', is_active: true } });
+        const inactiveDoctors = await User.count({ where: { role: 'doctor', is_active: false } });
+
+
+        // --- Construire la réponse ---
+        const stats = {
+            certificates: {
+                total: totalCertificates,
+                byStatus: certificatesByStatus
+            },
+            users: {
+                total: totalUsers,
+                byRole: usersByRole
+            },
+            doctors: {
+                total: usersByRole.doctor || 0, // Total doctors from usersByRole
+                active: activeDoctors,
+                inactive: inactiveDoctors
+            }
+            // Ajoutez d'autres stats ici si nécessaire
+        };
+
+        // Log l'action
+        await auditService.logAction({
+            userId: adminUserId,
+            action: 'admin_get_global_stats',
+            ipAddress: req.ip
+        });
+
+        res.status(200).json(stats);
+
+    } catch (error) {
+        console.error('Error fetching global stats:', error);
+        res.status(500).json({ message: 'An error occurred while fetching statistics.' });
+    }
+};
+
+// Garder ou supprimer l'ancien endpoint getCertificateStats selon besoin
+// exports.getCertificateStats = async (req, res) => { ... };
 
 // Ajoutez d'autres fonctions admin ici (getDoctors, updateDoctor, deleteDoctor, etc.)
 exports.getDoctors = async (req, res) => { /* ... logique ... */ res.status(501).json({ message: "Not implemented" }); };

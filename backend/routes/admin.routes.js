@@ -77,8 +77,11 @@ router.patch('/doctors/:id/status',
 );
 
 // == Statistics and Reports ==
-// GET /api/admin/stats/certificates - Get certificate statistics
-router.get('/stats/certificates', adminController.getCertificateStats);
+// GET /api/admin/stats - Get Global System Statistics
+router.get('/stats', adminController.getGlobalStats); // <<< Nouvelle route globale
+
+// Garder ou supprimer l'ancienne route si l'endpoint global suffit
+// router.get('/stats/certificates', adminController.getCertificateStats);
 
 // == Notifications ==
 // POST /api/admin/notifications/expiry - Trigger notifications for expiring certificates

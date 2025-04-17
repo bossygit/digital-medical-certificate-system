@@ -54,6 +54,20 @@ const listAllCertificates = async (page = 1, limit = 15) => {
     }
 };
 
+/**
+ * Récupère les statistiques globales du système pour l'admin.
+ * @returns {Promise<object>} L'objet contenant les statistiques.
+ */
+const getGlobalStats = async () => {
+    try {
+        const response = await apiClient.get('/admin/stats'); // Appel du nouvel endpoint
+        return response.data;
+    } catch (error) {
+        console.error('Admin Get Global Stats API error:', error.response ? error.response.data : error.message);
+        throw new Error(error.response?.data?.message || 'Failed to fetch statistics.');
+    }
+};
+
 const adminService = {
     addDoctor,
     listDoctors,
@@ -61,6 +75,7 @@ const adminService = {
     // updateDoctor,
     // updateDoctorStatus,
     listAllCertificates,
+    getGlobalStats
 };
 
 export default adminService;

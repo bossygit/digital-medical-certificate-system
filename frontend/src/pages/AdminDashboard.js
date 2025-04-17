@@ -35,9 +35,9 @@ const AdminDashboard = () => {
                             Gérer les Médecins Agréés
                         </Button>
 
-                        {/* Button for statistics (placeholder) */}
-                        <Button variant="secondary" disabled>
-                            Voir les Statistiques
+                        {/* Button for statistics */}
+                        <Button as={Link} to="/admin/stats" variant="secondary">
+                            <i className="fas fa-chart-bar me-2"></i> Voir les Statistiques
                         </Button>
 
                         {/* Link to verification page */}

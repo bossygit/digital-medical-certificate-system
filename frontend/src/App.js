@@ -22,6 +22,7 @@ import DoctorProfilePage from './pages/DoctorProfilePage';
 import AddDoctorPage from './pages/AddDoctorPage';
 import CertificateDetailsPage from './pages/CertificateDetailsPage';
 import AdminManageCertificatesPage from './pages/AdminManageCertificatesPage';
+import AdminStatsPage from './pages/AdminStatsPage';
 
 // Import ProtectedRoute
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -61,6 +62,7 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['dgtt_admin', 'dgtt_staff']} />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/certificates" element={<AdminManageCertificatesPage />} />
+              <Route path="/admin/stats" element={<AdminStatsPage />} />
               <Route element={<ProtectedRoute allowedRoles={['dgtt_admin']} />}>
                 <Route path="/admin/doctors" element={<ManageDoctorsPage />} />
                 <Route path="/admin/add-doctor" element={<AddDoctorPage />} />
