@@ -49,12 +49,30 @@ const getCertificateDetails = async (id) => {
     }
 };
 
+/**
+ * Vérifie un certificat en utilisant son identifiant QR.
+ * @param {string} qrIdentifier L'identifiant UUID du QR code.
+ * @returns {Promise<object>} Le résultat de la vérification.
+ */
+const verifyCertificateByQr = async (qrIdentifier) => {
+    try {
+        // Assurez-vous que le endpoint correspond à celui défini dans verification.routes.js
+        const response = await apiClient.get(`/verify/${qrIdentifier}`);
+        return response.data;
+    } catch (error) {
+        console.error('Verify Certificate API error:', error.response ? error.response.data : error.message);
+        // Renvoyer une structure d'erreur cohérente ou laisser l'erreur se propager
+        throw new Error(error.response?.data?.message || 'Failed to verify certificate.');
+    }
+};
+
 // Ajoutez d'autres fonctions (list, get) ici
 
 const certificateService = {
     issueCertificate,
     getDoctorHistory,
     getCertificateDetails,
+    verifyCertificateByQr,
     // listDoctorCertificates,
     // getCertificateDetails
 };
