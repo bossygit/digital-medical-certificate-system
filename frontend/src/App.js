@@ -55,21 +55,21 @@ function App() {
               <Route path="/doctor/issue-certificate" element={<IssueCertificatePage />} />
               <Route path="/doctor/history" element={<DoctorHistoryPage />} />
               <Route path="/doctor/profile" element={<DoctorProfilePage />} />
-              <Route path="/doctor/certificate/:id" element={<CertificateDetailsPage />} />
-              {/* Add other doctor-specific routes here */}
             </Route>
 
-            {/* Admin Protected Routes */}
+            {/* --- Admin Protected Routes --- */}
             <Route element={<ProtectedRoute allowedRoles={['dgtt_admin', 'dgtt_staff']} />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/certificates" element={<AdminManageCertificatesPage />} />
-              {/* Route accessible only to dgtt_admin */}
               <Route element={<ProtectedRoute allowedRoles={['dgtt_admin']} />}>
                 <Route path="/admin/doctors" element={<ManageDoctorsPage />} />
                 <Route path="/admin/add-doctor" element={<AddDoctorPage />} />
-                {/* Add other admin-only routes here */}
               </Route>
-              {/* Add other admin/staff routes here */}
+            </Route>
+
+            {/* --- Route Détails Certificat (Accessible par Docteur, Admin, Staff) --- */}
+            <Route element={<ProtectedRoute allowedRoles={['doctor', 'dgtt_admin', 'dgtt_staff']} />}>
+              <Route path="/doctor/certificate/:id" element={<CertificateDetailsPage />} />
             </Route>
 
             {/* Fallback Route */}
