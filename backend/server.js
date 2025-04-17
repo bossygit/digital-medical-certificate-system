@@ -8,6 +8,7 @@ const path = require('path');
 const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes'); // Importez les routes admin
 const certificateRoutes = require('./routes/certificate.routes'); // <<< Importez
+const verificationRoutes = require('./routes/verification.routes.js'); // <<< AJOUTEZ CET IMPORT
 
 // Load environment variables
 dotenv.config();
@@ -45,6 +46,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes); // Enregistrez les routes admin sous /api/admin
 app.use('/api/certificates', certificateRoutes); // <<< Enregistrez
+app.use('/api/verify', verificationRoutes); // <<< AJOUTEZ CETTE LIGNE
 
 // Basic route (Optionnel pour API seulement)
 app.get('/api', (req, res) => { // Mis sous /api pour éviter conflit avec frontend
