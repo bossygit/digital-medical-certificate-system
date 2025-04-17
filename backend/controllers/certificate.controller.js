@@ -53,14 +53,14 @@ exports.issueCertificate = async (req, res) => {
         const qr_code_identifier = uuidv4(); // Generate unique identifier for QR code
         const issue_date = new Date(); // Capture issue date for signature
 
-        // 3. Define data for digital signature and calculate hash
-        const dataToSign = JSON.stringify({
-            fn: applicant_first_name,
-            ln: applicant_last_name,
-            dob: applicant_dob,
-            fit: is_fit,
-            qrId: qr_code_identifier
-        });
+        // 3. Define data for digital signature using concatenation
+        const dataToSign = [
+            applicant_first_name,
+            applicant_last_name,
+            applicant_dob, // Assumed 'YYYY-MM-DD' string
+            String(is_fit), // Explicit string conversion
+            qr_code_identifier
+        ].join('|'); // Use a delimiter
 
         const digital_signature = crypto.createHash('sha256').update(dataToSign).digest('hex');
 

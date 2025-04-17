@@ -35,14 +35,14 @@ exports.verifyCertificateByQr = async (req, res) => {
             return res.status(404).json({ message: 'Certificate not found.', isValid: false });
         }
 
-        // 4. Reconstruct the signed data string (must match exactly the format used during creation)
-        const dataToVerify = JSON.stringify({
-            fn: certificate.applicant_first_name,
-            ln: certificate.applicant_last_name,
-            dob: certificate.applicant_dob, // DATEONLY format from DB
-            fit: certificate.is_fit,
-            qrId: certificate.qr_code_identifier
-        });
+        // 4. Reconstruct the signed data string using concatenation (must match issuance)
+        const dataToVerify = [
+            certificate.applicant_first_name,
+            certificate.applicant_last_name,
+            certificate.applicant_dob, // Assumed 'YYYY-MM-DD' string from DB
+            String(certificate.is_fit), // Explicit string conversion
+            certificate.qr_code_identifier
+        ].join('|'); // Use the SAME delimiter
 
         // 5. Calculate the hash of the reconstructed data
         const calculatedSignature = crypto.createHash('sha256').update(dataToVerify).digest('hex');
