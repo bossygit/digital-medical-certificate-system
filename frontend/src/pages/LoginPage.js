@@ -41,7 +41,7 @@ const LoginPage = () => {
                     <div>
                         <div className="mb-5">
 
-                            <h1 className="fw-bold">Portail contôle médical</h1>
+                            <h1 className="fw-bold">Portail contrôle médical</h1>
                         </div>
                         <h2 className="display-4 fw-bold mb-4">Bienvenue sur votre espace </h2>
                         <p className="lead">
