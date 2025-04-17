@@ -59,7 +59,6 @@ exports.issueCertificate = async (req, res) => {
             ln: applicant_last_name,
             dob: applicant_dob,
             fit: is_fit,
-            iss: issue_date.toISOString(), // Use ISO string for consistency
             qrId: qr_code_identifier
         });
 

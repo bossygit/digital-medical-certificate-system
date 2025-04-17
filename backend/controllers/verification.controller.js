@@ -41,7 +41,6 @@ exports.verifyCertificateByQr = async (req, res) => {
             ln: certificate.applicant_last_name,
             dob: certificate.applicant_dob, // DATEONLY format from DB
             fit: certificate.is_fit,
-            iss: certificate.issue_date.toISOString(), // Use ISO string for consistency
             qrId: certificate.qr_code_identifier
         });
 
