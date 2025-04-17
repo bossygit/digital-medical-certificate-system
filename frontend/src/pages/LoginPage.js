@@ -40,12 +40,12 @@ const LoginPage = () => {
                 <Col md={7} className="bg-success text-white d-flex flex-column justify-content-between p-5">
                     <div>
                         <div className="mb-5">
-                            <h6 className="mb-0">Armoiries du Congo</h6>
-                            <h1 className="fw-bold">Portail Médical Congolais</h1>
+
+                            <h1 className="fw-bold">Portail contôle médical</h1>
                         </div>
-                        <h2 className="display-4 fw-bold mb-4">Bienvenue sur votre espace professionnel de santé</h2>
+                        <h2 className="display-4 fw-bold mb-4">Bienvenue sur votre espace </h2>
                         <p className="lead">
-                            Gérez vos patients, rendez-vous et dossiers médicaux en toute sécurité.
+                            Gérez les dossiers médicaux en toute sécurité.
                         </p>
                     </div>
                     <Image
@@ -68,7 +68,7 @@ const LoginPage = () => {
                         </div>
 
                         <h3 className="text-center mb-2 fw-bold">Connexion</h3>
-                        <p className="text-center text-muted mb-4">Accédez à votre espace professionnel</p>
+                        <p className="text-center text-muted mb-4">Accédez à votre espace </p>
 
                         <Form onSubmit={handleSubmit}>
                             {error && (
@@ -77,7 +77,7 @@ const LoginPage = () => {
                                 </Alert>
                             )}
                             <Form.Group className="mb-3" controlId="formBasicEmail">
-                                <Form.Label>Email professionnel</Form.Label>
+                                <Form.Label>Email</Form.Label>
                                 <Form.Control
                                     type="email"
                                     placeholder="Entrez votre email"
