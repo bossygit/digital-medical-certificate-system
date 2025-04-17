@@ -21,6 +21,7 @@ import DoctorHistoryPage from './pages/DoctorHistoryPage';
 import DoctorProfilePage from './pages/DoctorProfilePage';
 import AddDoctorPage from './pages/AddDoctorPage';
 import CertificateDetailsPage from './pages/CertificateDetailsPage';
+import AdminManageCertificatesPage from './pages/AdminManageCertificatesPage';
 
 // Import ProtectedRoute
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -61,6 +62,7 @@ function App() {
             {/* Admin Protected Routes */}
             <Route element={<ProtectedRoute allowedRoles={['dgtt_admin', 'dgtt_staff']} />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/certificates" element={<AdminManageCertificatesPage />} />
               {/* Route accessible only to dgtt_admin */}
               <Route element={<ProtectedRoute allowedRoles={['dgtt_admin']} />}>
                 <Route path="/admin/doctors" element={<ManageDoctorsPage />} />

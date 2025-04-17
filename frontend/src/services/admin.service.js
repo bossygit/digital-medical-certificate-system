@@ -36,6 +36,23 @@ const listDoctors = async (page = 1, limit = 10) => {
     }
 }
 
+/**
+ * Récupère la liste de tous les certificats pour l'admin (paginée).
+ * @param {number} page La page à récupérer.
+ * @param {number} limit Le nombre d'éléments par page.
+ * @returns {Promise<object>} Les données paginées des certificats.
+ */
+const listAllCertificates = async (page = 1, limit = 15) => {
+    try {
+        const response = await apiClient.get('/admin/certificates', {
+            params: { page, limit }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Admin List Certificates API error:', error.response ? error.response.data : error.message);
+        throw new Error(error.response?.data?.message || 'Failed to fetch certificate list.');
+    }
+};
 
 const adminService = {
     addDoctor,
@@ -43,6 +60,7 @@ const adminService = {
     // getDoctorDetails,
     // updateDoctor,
     // updateDoctorStatus,
+    listAllCertificates,
 };
 
 export default adminService;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Button, Stack } from 'react-bootstrap';
+import { Container, Row, Col, Button, Stack, Card } from 'react-bootstrap';
 
 const AdminDashboard = () => {
     const { user, logout } = useAuth();
@@ -58,6 +58,19 @@ const AdminDashboard = () => {
                     </Button>
                 </Col>
             </Row>
+
+            <Card className="mb-3">
+                <Card.Body>
+                    <Card.Title>Gestion des Certificats</Card.Title>
+                    <Card.Text>
+                        Consulter l'historique de tous les certificats médicaux émis.
+                    </Card.Text>
+                    <Button as={Link} to="/admin/certificates" variant="info">
+                        <i className="fas fa-list-alt me-2"></i> Voir Tous les Certificats
+                    </Button>
+                </Card.Body>
+            </Card>
+
             {/* Add more sections for admin tasks later */}
         </Container>
     );

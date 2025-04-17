@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto'); // For generating temp password
 const auditService = require('../services/audit.service'); // Import audit service
 const { generateTemporaryPassword } = require('../utils/passwordUtils'); // À créer
+const { Certificate, Doctor, User } = require('../models'); // Assurez-vous d'importer les modèles nécessaires
 
 // === Doctor Management ===
 
@@ -421,6 +422,73 @@ exports.sendExpiryNotifications = async (req, res) => {
     // 3. Integrate with an email/SMS service to send notifications
     // Log action
     res.status(501).json({ message: 'Send expiry notifications not implemented yet.' });
+};
+
+// === Certificate Management (Admin) ===
+
+exports.listAllCertificates = async (req, res) => {
+    const adminUserId = req.user.id; // ID de l'admin connecté
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15; // Un peu plus par page peut-être
+    const offset = (page - 1) * limit;
+
+    try {
+        const { count, rows } = await Certificate.findAndCountAll({
+            limit: limit,
+            offset: offset,
+            order: [['issue_date', 'DESC']], // Trier par date d'émission
+            include: [ // Inclure les infos du médecin émetteur
+                {
+                    model: Doctor,
+                    as: 'issuingDoctor',
+                    attributes: ['doctor_id', 'agrement_number'], // Champs Doctor pertinents
+                    include: {
+                        model: User,
+                        as: 'user',
+                        attributes: ['user_id', 'first_name', 'last_name'] // Champs User pertinents
+                    }
+                }
+            ],
+            // Sélectionnez les champs Certificat nécessaires pour la liste admin
+            attributes: [
+                'certificate_id', 'applicant_first_name', 'applicant_last_name',
+                'issue_date', 'expiry_date', 'status', 'qr_code_identifier'
+            ]
+        });
+
+        const totalPages = Math.ceil(count / limit);
+
+        // Formatter les résultats pour inclure le nom du docteur directement
+        const formattedCertificates = rows.map(cert => {
+            const plainCert = cert.get({ plain: true }); // Obtenir l'objet simple
+            plainCert.doctorName = plainCert.issuingDoctor?.user
+                ? `${plainCert.issuingDoctor.user.first_name} ${plainCert.issuingDoctor.user.last_name}`
+                : 'N/A';
+            plainCert.doctorAgrement = plainCert.issuingDoctor?.agrement_number || 'N/A';
+            delete plainCert.issuingDoctor; // Supprimer l'objet imbriqué après extraction
+            return plainCert;
+        });
+
+
+        // Log l'action
+        await auditService.logAction({
+            userId: adminUserId,
+            action: 'admin_list_all_certificates',
+            ipAddress: req.ip,
+            details: { page, limit }
+        });
+
+        res.status(200).json({
+            totalItems: count,
+            totalPages: totalPages,
+            currentPage: page,
+            certificates: formattedCertificates // Utiliser les certificats formatés
+        });
+
+    } catch (error) {
+        console.error('Error listing all certificates for admin:', error);
+        res.status(500).json({ message: 'An error occurred while listing certificates.' });
+    }
 };
 
 // Ajoutez d'autres fonctions admin ici (getDoctors, updateDoctor, deleteDoctor, etc.)

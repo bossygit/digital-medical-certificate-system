@@ -84,6 +84,17 @@ router.get('/stats/certificates', adminController.getCertificateStats);
 // POST /api/admin/notifications/expiry - Trigger notifications for expiring certificates
 router.post('/notifications/expiry', adminController.sendExpiryNotifications);
 
+// == Certificate Management ==
+// GET /api/admin/certificates - List all certificates (for Admin)
+router.get('/certificates',
+    [ // Validation optionnelle de la pagination
+        query('page').optional().isInt({ min: 1 }).toInt().withMessage('Page must be a positive integer.'),
+        query('limit').optional().isInt({ min: 1, max: 100 }).toInt().withMessage('Limit must be between 1 and 100.')
+    ],
+    validationMiddleware.handleValidationErrors,
+    adminController.listAllCertificates // Nouvelle fonction contrôleur
+);
+
 // Remove placeholder route
 // router.get('/ping', (req, res) => res.send('Admin routes working! (Requires Admin Auth)'));
 
