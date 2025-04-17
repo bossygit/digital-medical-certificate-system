@@ -50,3 +50,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+.text-success-light {
+  color: #d1e7dd;
+  /* Couleur de fond des alertes success Bootstrap */
+}

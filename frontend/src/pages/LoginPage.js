@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import authService from '../services/auth.service';
 import { Link } from 'react-router-dom';
-import { Container, Form, Button, Alert, Row, Col, Spinner } from 'react-bootstrap'; // Import necessary components
+import { Container, Form, Button, Alert, Row, Col, Spinner, Image } from 'react-bootstrap';
+import loginImage from '../assets/images/doctor-patient-login.jpg';
 
 const LoginPage = () => {
     const [email, setEmail] = useState('');
@@ -21,11 +22,12 @@ const LoginPage = () => {
             contextLogin(response.user, response.token);
 
         } catch (err) {
-            if (err.message && err.message.includes('Temporary password') && err.response?.data?.requiresFirstLogin) {
-                // Render the link within the error state
+            if (err.message && err.message.includes('Invalid') && err.response?.status === 401) {
+                setError('Email ou mot de passe invalide.');
+            } else if (err.response?.data?.requiresFirstLogin) {
                 setError(<>Compte temporaire détecté. Veuillez <Link to="/first-login">compléter la première connexion</Link>.</>);
             } else {
-                setError(err.message || 'La connexion a échoué. Veuillez vérifier vos identifiants.');
+                setError(err.message || 'La connexion a échoué. Veuillez réessayer.');
             }
         } finally {
             setIsLoading(false);
@@ -33,50 +35,95 @@ const LoginPage = () => {
     };
 
     return (
-        <Container>
-            <Row className="justify-content-md-center mt-5">
-                <Col md={6} lg={4}>
-                    <h2 className="mb-3">Connexion</h2>
-                    <Form onSubmit={handleSubmit}>
-                        {error && (
-                            <Alert variant="danger" onClose={() => setError('')} dismissible>
-                                {error} { /* Display error which might contain a Link */}
-                            </Alert>
-                        )}
-                        <Form.Group className="mb-3" controlId="formBasicEmail">
-                            <Form.Label>Email</Form.Label>
-                            <Form.Control
-                                type="email"
-                                placeholder="Entrez votre email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                disabled={isLoading}
-                            />
-                        </Form.Group>
+        <Container fluid className="vh-100 p-0">
+            <Row className="g-0 h-100">
+                <Col md={7} className="bg-success text-white d-flex flex-column justify-content-between p-5">
+                    <div>
+                        <div className="mb-5">
+                            <h6 className="mb-0">Armoiries du Congo</h6>
+                            <h1 className="fw-bold">Portail Médical Congolais</h1>
+                        </div>
+                        <h2 className="display-4 fw-bold mb-4">Bienvenue sur votre espace professionnel de santé</h2>
+                        <p className="lead">
+                            Gérez vos patients, rendez-vous et dossiers médicaux en toute sécurité.
+                        </p>
+                    </div>
+                    <Image
+                        src={loginImage}
+                        alt="Professionnel de santé avec un patient"
+                        fluid
+                        rounded
+                        className="mt-4 align-self-center"
+                        style={{ maxWidth: '80%', maxHeight: '300px', objectFit: 'cover' }}
+                    />
+                </Col>
 
-                        <Form.Group className="mb-3" controlId="formBasicPassword">
-                            <Form.Label>Mot de passe</Form.Label>
-                            <Form.Control
-                                type="password"
-                                placeholder="Mot de passe"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                disabled={isLoading}
-                            />
-                        </Form.Group>
+                <Col md={5} className="d-flex flex-column align-items-center justify-content-center bg-light p-5">
+                    <div className="w-100" style={{ maxWidth: '400px' }}>
+                        <div className="text-center mb-4">
+                            <span className="fa-stack fa-2x">
+                                <i className="fas fa-circle fa-stack-2x text-success-light"></i>
+                                <i className="fas fa-stethoscope fa-stack-1x fa-inverse text-success"></i>
+                            </span>
+                        </div>
 
-                        <Button variant="primary" type="submit" disabled={isLoading} className="w-100">
-                            {isLoading ? (
-                                <><Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> Connexion...</>
-                            ) : (
-                                'Se connecter'
+                        <h3 className="text-center mb-2 fw-bold">Connexion</h3>
+                        <p className="text-center text-muted mb-4">Accédez à votre espace professionnel</p>
+
+                        <Form onSubmit={handleSubmit}>
+                            {error && (
+                                <Alert variant="danger" onClose={() => setError('')} dismissible>
+                                    {error}
+                                </Alert>
                             )}
-                        </Button>
-                    </Form>
-                    <div className="mt-3 text-center">
-                        <Link to="/request-password-reset">Mot de passe oublié ?</Link>
+                            <Form.Group className="mb-3" controlId="formBasicEmail">
+                                <Form.Label>Email professionnel</Form.Label>
+                                <Form.Control
+                                    type="email"
+                                    placeholder="Entrez votre email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    disabled={isLoading}
+                                    size="lg"
+                                />
+                            </Form.Group>
+
+                            <Form.Group className="mb-3" controlId="formBasicPassword">
+                                <Form.Label>Mot de passe</Form.Label>
+                                <Form.Control
+                                    type="password"
+                                    placeholder="Mot de passe"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    disabled={isLoading}
+                                    size="lg"
+                                />
+                            </Form.Group>
+
+                            <Row className="mb-3 align-items-center">
+                                <Col>
+                                    <Form.Check
+                                        type="checkbox"
+                                        label="Se souvenir de moi"
+                                        id="rememberMeCheckbox"
+                                        disabled={isLoading}
+                                    />
+                                </Col>
+                                <Col xs="auto">
+                                    <Link to="/request-password-reset" className="text-success">Mot de passe oublié ?</Link>
+                                </Col>
+                            </Row>
+
+                            <Button variant="success" type="submit" disabled={isLoading} className="w-100" size="lg">
+                                {isLoading ? (
+                                    <><Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> Connexion...</>
+                                ) : (
+                                    'Se connecter'
+                                )}
+                            </Button>
+                        </Form>
                     </div>
                 </Col>
             </Row>
