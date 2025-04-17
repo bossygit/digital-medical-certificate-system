@@ -8,6 +8,7 @@ const VerificationPage = () => {
     const [verificationResult, setVerificationResult] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [manualQrId, setManualQrId] = useState('');
 
     useEffect(() => {
         const verify = async () => {
@@ -42,6 +43,16 @@ const VerificationPage = () => {
 
         verify();
     }, [qrId]);
+
+    const handleManualSubmit = (e) => {
+        e.preventDefault();
+        if (manualQrId) {
+            // Appeler la fonction qui lance la vérification API avec manualQrId
+            verifyCertificate(manualQrId);
+        } else {
+            setError('Veuillez entrer un identifiant QR.');
+        }
+    };
 
     // Helper to format date
     const formatDate = (dateString) => {
